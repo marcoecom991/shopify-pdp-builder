@@ -1,0 +1,21 @@
+# MAI committare segreti: token Shopify, chiavi API, ecc.
+.env
+.env.local
+.env.*.local
+
+# Config store reale del membro del team (contiene path locali, opzionalmente token)
+config/stores.json
+
+# Log runtime della skill
+logs/
+*.log
+
+# macOS / editor
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# Eventuali workdir store (se qualcuno per errore li copia qui — non devono stare nel plugin)
+workdir/
+Shopify-Stores/

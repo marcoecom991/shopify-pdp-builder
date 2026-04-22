@@ -1,0 +1,21 @@
+{
+  "_comment": "Copia questo file come 'stores.json' (NON committato). Compila con i tuoi path locali e theme ID. La skill /create-new-pdp legge da qui la lista degli store disponibili sulla tua macchina.",
+  "stores": [
+    {
+      "name": "Nimea",
+      "shopify_domain": "qncxve-5r.myshopify.com",
+      "custom_domain": "nimea-beauty.it",
+      "theme_id": "195368288591",
+      "workdir_path": "/Users/REPLACE_ME/Desktop/Shopify-Stores/Nimea/workdir",
+      "env_path": "/Users/REPLACE_ME/Desktop/Shopify-Stores/Nimea/.env"
+    },
+    {
+      "name": "Glowria",
+      "shopify_domain": "2hw0d3-wu.myshopify.com",
+      "custom_domain": "glowria-beauty.it",
+      "theme_id": "196773773653",
+      "workdir_path": "/Users/REPLACE_ME/Desktop/Shopify-Stores/Glowria/workdir",
+      "env_path": "/Users/REPLACE_ME/Desktop/Shopify-Stores/Glowria/.env"
+    }
+  ]
+}

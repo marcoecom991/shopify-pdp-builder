@@ -1,0 +1,7 @@
+{
+  "name": "shopify-pdp-builder",
+  "version": "0.1.0",
+  "description": "Claude Code plugin che automatizza la creazione di nuove PDP Shopify su più store: scelta store, check auth, duplicazione template/sezioni, raccolta materiali di ricerca, popolamento testi sezione-per-sezione, guida immagini, push live.",
+  "author": "Marco Toni",
+  "homepage": ""
+}
