@@ -9,8 +9,9 @@ Sei una guida passo-passo per creare una PDP Shopify da zero. Segui le 7 fasi **
 
 ## Principio generale
 
-- **Non riscrivere il markup esistente.** Quando duplichi sezioni e poi le popoli con i nuovi contenuti, preservi layout, CSS, JS responsive della sezione di partenza. Modifichi solo testi e URL immagini. Fonte di verità: `references/workflow-faithful-rebuild.md`.
-- **Un push per volta, sempre selettivo.** Mai `theme push` senza `--only`. Fonte di verità: `references/selective-push.md`.
+- **🔒 Il template base e le sue sezioni NON si toccano MAI.** Il template base (es. `product.berberina-pills.json`) e le sue sezioni (es. `cboe-pdp-05.liquid`) appartengono a un prodotto live diverso. Ogni modifica a quei file rompe un prodotto esistente. **Si duplicano sempre in file nuovi con prefisso nuovo**, e TUTTE le modifiche avvengono solo sui duplicati. Mai `Edit` o `Write` sui file base.
+- **Non riscrivere il markup esistente.** Quando popoli le sezioni duplicate con i contenuti del nuovo prodotto, preservi layout, CSS, JS della sezione di partenza. Modifichi solo testi e URL immagini. Fonte di verità: `references/workflow-faithful-rebuild.md`.
+- **Un push per volta, sempre selettivo.** Mai `theme push` senza `--only`. Il `--only` include SOLO i file duplicati (nuovo prefisso). Fonte di verità: `references/selective-push.md`.
 - **Conferma con l'utente prima di ogni azione distruttiva o irreversibile** (creazione file, push live, rinomina).
 
 ## Lettura dello stato iniziale
@@ -38,7 +39,7 @@ Salva in memoria i campi dello store scelto:
 
 ---
 
-## Fase 2 — Verifica auth
+## Fase 2 — Verifica auth + scelta tema
 
 1. Controlla che `store.env_path` esista. Se NO:
    - Spiega all'utente cosa serve (token Theme Access). Fonte: `references/auth-pattern.md`, sezione "Come generare un nuovo Theme Access token".
@@ -47,21 +48,35 @@ Salva in memoria i campi dello store scelto:
      SHOPIFY_CLI_THEME_TOKEN=<token-incollato>
      SHOPIFY_FLAG_STORE=<store.shopify_domain>
      ```
-2. Verifica la connessione con un comando di test:
+2. Verifica la connessione elencando i temi dello store:
    ```bash
    cd "<store.workdir_path>"
    set -a; source "<store.env_path>"; set +a
-   npx @shopify/cli@latest theme list --no-color 2>&1 | tail -20
+   npx @shopify/cli@latest theme list --no-color
    ```
 3. Se l'output mostra errori di auth (`401`, `Invalid API key`, `Unauthorized`): il token è scaduto. Chiedi all'utente di rigenerarlo e aggiornare il `.env`. Rilancia il test.
-4. Se l'output mostra la lista temi: verifica che `store.theme_id` sia presente. Conferma con l'utente quale theme ID usare (di solito il live published).
 
-Se `workdir/` è vuoto o datato, chiedi all'utente se vuole fare un `theme pull` fresco:
-```bash
-cd "<store.workdir_path>"
-set -a; source "<store.env_path>"; set +a
-npx @shopify/cli@latest theme pull --theme <store.theme_id> --nodelete
-```
+4. **Mostra all'utente la lista temi parsata** in formato leggibile, evidenziando il live pubblicato:
+   ```
+   Temi attivi su <store.name>:
+     • [live]     <Nome tema>  (id: <ID>)
+     • [unpublished] <Nome tema>  (id: <ID>)
+     • [development] <Nome tema>  (id: <ID>)
+   ```
+
+5. Usa `AskUserQuestion` per chiedere **su quale tema operare**:
+   - Default proposto: il tema `[live]` (o quello in `store.theme_id` se presente in `config/stores.json`).
+   - Opzioni: una per ogni tema elencato.
+   - L'utente può scegliere anche un tema unpublished/development per testare in sicurezza.
+6. Salva la scelta in `store.theme_id` (sovrascrive il valore di default del config per questa sessione) e `store.theme_name`.
+
+7. **Pull fresco del tema scelto**, così le duplicazioni partono da file allineati al remoto (e il template base che modificheremmo per sbaglio non esiste solo in locale vecchio):
+   ```bash
+   cd "<store.workdir_path>"
+   set -a; source "<store.env_path>"; set +a
+   npx @shopify/cli@latest theme pull --theme <store.theme_id> --nodelete
+   ```
+   Conferma all'utente prima di lanciarlo (il pull sovrascrive file locali non pushati).
 
 ---
 
@@ -171,19 +186,51 @@ Dopo che l'utente ha fornito tutto: fai un riepilogo sintetico (nome prodotto, 3
 
 ---
 
-## Fase 5 — Popolamento testi sezione-per-sezione
+## Fase 5 — Riscrittura testi per il nuovo prodotto, sezione-per-sezione
+
+**Contesto importante**: le sezioni duplicate contengono ATTUALMENTE i testi del prodotto base (es. sezioni copiate da `berberina-pills` parlano ancora di berberina). Il tuo compito in questa fase è, sezione per sezione, **riscrivere i testi del nuovo prodotto** partendo dalla research raccolta in Fase 4, mantenendo IDENTICI markup/CSS/JS/struttura della sezione.
+
+Nessun HTML da incollare in questa fase — tutti i contenuti del nuovo prodotto li hai già dal blocco di ricerca della Fase 4.
 
 Per ogni sezione nel template nuovo, in ordine di apparizione nel JSON (top → bottom):
 
-1. Mostra all'utente: "Prossima sezione: `<nuovo-prefisso>-<suffix>.liquid` — tipo <hero | carousel | video | dottori | comparison | FAQ | reviews | ...>."
-2. Chiedi: "Incolla l'HTML di riferimento per questa sezione (dalla PDP esistente del template base, dalla preview GemPages, o da tua creazione), così riproduco i testi."
-3. Attendi incolla.
-4. Applica la regola di `references/workflow-faithful-rebuild.md`:
-   - Identifica nell'HTML incollato **solo i testi** (titoli, paragrafi, bullet, label) e **solo gli URL immagini**.
-   - Apri `sections/<nuovo-prefisso>-<suffix>.liquid` con `Read`.
-   - Sostituisci i testi/URL corrispondenti mantenendo markup/CSS/JS identici.
-   - Per sostituzioni semplici: `Edit`. Per molte sostituzioni: `Bash` con `python3 <<'PY' ... PY` e heredoc + list di replace con `assert n == 1`.
-5. Push selettivo:
+1. **Apri il file duplicato** `sections/<nuovo-prefisso>-<suffix>.liquid` con `Read` e identifica:
+   - Il ruolo della sezione (hero, carousel testimonial, video, dottori, "perché funziona", hotspot, comparison, FAQ, reviews, closing CTA, …). Mappa il ruolo dal nome del file usando `references/image-specs-per-section.md`.
+   - Tutti i testi attualmente presenti (del prodotto base): headline, sub-headline, bullet/paragrafi, CTA, label card, domande FAQ, testimonianze, etc.
+   - Gli URL immagine attualmente presenti (verranno sostituiti in Fase 6, non qui).
+
+2. **Proponi all'utente i testi riscritti** per il nuovo prodotto, derivati dalla research:
+   - Per ogni testo base identificato, produci la versione equivalente per il nuovo prodotto con lo stesso peso/lunghezza/tono.
+   - Usa claim, proof points, ingredienti, tono dalla research (Fase 4).
+   - Mantieni la stessa struttura (stesso numero di bullet, stesse label di card, stesso numero di FAQ, ecc.). Se la research non basta per riempire una struttura (es. 5 card ma solo 3 claim), **chiedi input mirato** all'utente invece di inventare.
+   - Mostra la proposta in formato diff chiaro:
+     ```
+     Sezione: <nuovo-prefisso>-<suffix>.liquid (<ruolo>)
+     — Headline
+        prima:  "Il segreto della berberina per abbassare il colesterolo"
+        dopo:   "La crema che rassoda la pelle in 4 settimane"
+     — Sub-headline
+        prima:  "..."
+        dopo:   "..."
+     — Bullet 1/3
+        prima:  "..."
+        dopo:   "..."
+     ...
+     ```
+
+3. **Aspetta conferma o correzioni** dall'utente prima di scrivere nel file. L'utente può:
+   - Confermare tutto → vai al punto 4.
+   - Correggere singoli testi → applica le correzioni e riconferma.
+   - Chiedere un tono diverso (più diretto, più emotivo, più tecnico) → rigenera.
+
+4. **Applica le sostituzioni** SOLO sul file duplicato `sections/<nuovo-prefisso>-<suffix>.liquid`:
+   - Per poche sostituzioni: `Edit` con `old_string` / `new_string` esatti, uno per testo.
+   - Per molte sostituzioni (es. sezione FAQ con 7 Q&A, o reviews wall con 10+ recensioni): `Bash` con `python3 <<'PY' ... PY` heredoc, usando il pattern `s, n = src.replace(old, new, 1); assert n == 1, "…"` per ogni replace. Vedi `references/workflow-faithful-rebuild.md`.
+   - **Non toccare**: markup HTML, classi CSS, blocchi `<script>`/`<style>` non-testuali, attributi `data-*`, URL immagine (verranno in Fase 6), `{% schema %}`, Liquid tags.
+
+5. **Verifica no-regressioni sul template base**: prima del push, conferma a te stesso di non aver aperto/modificato per sbaglio file `sections/<vecchio-prefisso>-*.liquid` o `templates/product.<vecchio-nome>.json`. Se l'hai fatto, fermati e ripristina.
+
+6. **Push selettivo** della sola sezione modificata:
    ```bash
    cd "<store.workdir_path>"
    set -a; source "<store.env_path>"; set +a
@@ -191,11 +238,14 @@ Per ogni sezione nel template nuovo, in ordine di apparizione nel JSON (top → 
      --theme <store.theme_id> --nodelete --allow-live \
      --only "sections/<nuovo-prefisso>-<suffix>.liquid"
    ```
-6. Chiedi all'utente di aprire l'URL live (`https://<store.shopify_domain>/products/<product.slug>`) e confermare che testi e layout siano corretti su mobile e desktop.
-7. Gestisci eventuali aggiustamenti (font-size, white-space, nowrap) come modifiche minime — NON rifare la sezione.
-8. Quando l'utente conferma, passa alla sezione successiva.
 
-Continua fino all'ultima sezione del template.
+7. Chiedi all'utente di aprire l'URL live (`https://<store.shopify_domain>/products/<product.slug>`) e confermare testi/layout su mobile e desktop.
+
+8. Gestisci aggiustamenti (font-size, white-space, nowrap, spelling) come modifiche minime incrementali — mai rifare la sezione.
+
+9. Quando l'utente conferma, passa alla sezione successiva.
+
+Continua fino all'ultima sezione del template. A fine fase, tutti i testi del nuovo prodotto sono live, le immagini sono ancora quelle vecchie (placeholder del prodotto base): vengono sostituite in Fase 6.
 
 ---
 
