@@ -21,9 +21,20 @@ Segui le 8 fasi **in sequenza**. Non saltare fasi. Usa `AskUserQuestion` come ga
 
 ## Lettura dello stato iniziale
 
-All'avvio:
-1. Leggi `config/stores.json` dal `<plugin-root>/config/stores.json`. Se NON esiste, copialo da `config/stores.example.json` e chiedi all'utente di compilarlo con path locali + theme IDs. Stop.
-2. Se esiste, estrai la lista degli store.
+All'avvio devi trovare il file `config/stores.json` che contiene la configurazione degli store. Il path canonico è:
+
+```
+/Users/<username>/Desktop/shopify-pdp-builder/config/stores.json
+```
+
+**IMPORTANTE**: questo file vive nella cartella del plugin, **NON** dentro la skill. La skill può essere stata caricata via symlink da `~/.claude/skills/create-new-funnel/` — in quel caso NON creare mai `~/.claude/skills/create-new-funnel/config/...`: quella directory non deve esistere.
+
+Procedura di ricerca:
+
+1. **Prova il path canonico**: `~/Desktop/shopify-pdp-builder/config/stores.json`. Leggilo con `Read`. Se esiste, procedi col punto 4.
+2. **Fallback — risolvi via symlink**: se il path canonico non esiste, lancia `readlink ~/.claude/skills/create-new-funnel` per capire dove punta il symlink. Il parent-parent di quella destinazione è il plugin root (es. `/Users/<user>/Desktop/shopify-pdp-builder`). Cerca `<plugin-root>/config/stores.json`.
+3. **Se non trovato in nessun path**: fermati. Chiedi all'utente il path del plugin `shopify-pdp-builder` sul suo disco. NON creare `stores.example.json` dentro `~/.claude/skills/` — è il posto sbagliato.
+4. Una volta trovato `stores.json`, estrai la lista degli store.
 
 ---
 
