@@ -207,7 +207,52 @@ Chiedi all'utente di fornire (puoi presentare come checklist):
 4. **Angolo marketing corrente**: 1-3 esempi di ad che l'utente sta girando su questo prodotto (copy + headline + immagine/video). Serve per allineare il tono della PDP.
 5. **Brand assets**: palette colori (HEX), font (famiglie web), logo URL CDN.
 
-Dopo che l'utente ha fornito tutto: fai un riepilogo sintetico (nome prodotto, 3 claim principali, 3 proof points, palette) e chiedi conferma "Materiali completi, procedo con la scrittura testi sezione-per-sezione?"
+### 4.1 Analisi angle competitor + proposta (OBBLIGATORIO)
+
+**Step fisso, non saltabile.** Dopo aver ricevuto le PDP competitor e il resto dei materiali, PRIMA di passare alla riscrittura testi:
+
+1. **Identifica il MAIN ANGLE** usato dai competitor per questo prodotto. L'angle è l'angolazione narrativa principale — NON è il claim, è il frame da cui il prodotto viene raccontato. Esempi:
+   - "Ingrediente scientifico esclusivo" (angle scientifico)
+   - "Routine naturale di 5 minuti al giorno" (angle lifestyle/semplicità)
+   - "Alternativa economica al trattamento estetico da €300" (angle risparmio)
+   - "Before/after reale di persone come te" (angle social proof/identificazione)
+   - "Risolve X in N giorni — garantito" (angle result-driven/urgency)
+
+2. **Presenta l'angle dominante** all'utente con evidenze:
+   ```
+   Dall'analisi dei competitor PDP + ads emerge questo angle dominante:
+
+   ➤ ANGLE: <frase di 1 riga>
+      Evidenze:
+      - Competitor A (URL): <come lo usa>
+      - Competitor B (URL): <come lo usa>
+      - Ads attuali: <come lo rinforzano>
+   ```
+
+3. **`AskUserQuestion`**: "Vuoi usare questo stesso angle per la nostra PDP?"
+   - **Sì, uso questo angle** → salva in `pdp.angle` e procedi.
+   - **No, proponimi alternative** → vai al punto 4.
+   - **Ho un angle mio in mente** → l'utente lo descrive, salva e procedi.
+
+4. Se l'utente chiede alternative: **proponi 2-3 angle alternativi** che sono:
+   - Usati in adiacenza (da competitor minori o in prodotti simili della stessa categoria).
+   - Coerenti con i proof points / ingredienti del nostro prodotto (niente angle che non possiamo sostenere).
+   - Differenzianti rispetto al main angle (per non essere "l'ennesima copia di X").
+
+   Presentali con la stessa struttura (angle + evidenze + perché potrebbe funzionare meglio). Poi richiedi conferma via `AskUserQuestion`.
+
+Salva l'angle scelto in `pdp.angle` — sarà la bussola della riscrittura di TUTTE le sezioni in Fase 5.
+
+### 4.2 Riepilogo e conferma
+
+Fai un riepilogo sintetico:
+- Nome prodotto
+- **Angle scelto** (una riga)
+- 3 claim principali
+- 3 proof points
+- Palette
+
+Chiedi: "Materiali completi, procedo con la scrittura testi sezione-per-sezione?"
 
 ---
 
@@ -246,6 +291,7 @@ Per ogni sezione nel template nuovo, in ordine di apparizione nel JSON (top → 
 2. **Proponi all'utente i testi riscritti** per il nuovo prodotto, derivati dalla research:
    - Per ogni testo base identificato, produci la versione equivalente per il nuovo prodotto con lo stesso peso/lunghezza/tono.
    - Usa claim, proof points, ingredienti, tono dalla research (Fase 4).
+   - **Tutti i testi devono essere coerenti con `pdp.angle`** scelto in Fase 4.1. Se una sezione chiede di virare su un altro angolo, segnala e chiedi prima di procedere.
    - Mantieni la stessa struttura (stesso numero di bullet, stesse label di card, stesso numero di FAQ, ecc.). Se la research non basta per riempire una struttura (es. 5 card ma solo 3 claim), **chiedi input mirato** all'utente invece di inventare.
    - Mostra la proposta in formato diff chiaro:
      ```

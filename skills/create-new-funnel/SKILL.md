@@ -226,15 +226,43 @@ Obiettivo: capire **come gli altri comunicano lo stesso problema/soluzione** e t
 
 Output: tabella sintetica competitor vs nostro, con colonne `claim_primario`, `differenziatore`, `prezzo`, `gap`.
 
-### 6.3 Ads e angoli (attuali o da testare)
+### 6.3 Analisi angle competitor + proposta (OBBLIGATORIO)
 
-Chiedi all'utente:
-- 1-3 copy ads **attualmente girati** per questo prodotto (headline + body + concept video, se disponibili).
-- Se non ci sono ads → quali **angoli vorrebbe testare** con questo advertorial (es. "angolo scientifico / ingrediente X", "angolo emotivo before-after", "angolo risparmio rispetto a trattamento estetico").
+**Step fisso, non saltabile.** Dopo aver studiato le PDP competitor (6.2), identifica l'angle dominante prima di chiedere alternative.
 
-Analizza insieme all'utente e **proponi 2-3 angle alternativi** basati su: studio PDP (6.1) + gap competitor (6.2) + creatività.
+1. **Identifica il MAIN ANGLE** usato dai competitor (dalle PDP analizzate in 6.2 + dai funnel competitor di Fase 5.2). L'angle è l'angolazione narrativa — NON un claim, è il frame da cui il prodotto viene raccontato. Esempi:
+   - "Ingrediente scientifico esclusivo" (angle scientifico)
+   - "Routine naturale di 5 minuti al giorno" (angle lifestyle)
+   - "Alternativa economica al trattamento estetico da €300" (angle risparmio)
+   - "Before/after reale di persone come te" (angle social proof)
+   - "Risolve X in N giorni — garantito" (angle result-driven)
 
-`AskUserQuestion`: "Quale angle usiamo per questo advertorial?" — opzioni basate su quelli proposti + "Altro (descrivilo tu)".
+2. **Presenta il main angle** all'utente con evidenze concrete:
+   ```
+   Dall'analisi competitor emerge questo angle dominante:
+
+   ➤ ANGLE: <frase di 1 riga>
+      Evidenze:
+      - Competitor A (URL): <frase/claim specifica che lo dimostra>
+      - Competitor B (URL): <idem>
+      - Funnel competitor X (URL): <idem>
+   ```
+
+3. **Chiedi anche gli ads attuali del nostro prodotto**:
+   - 1-3 copy ads attualmente girati (headline + body + concept video, se ci sono).
+   - Se l'utente risponde `skip`: OK, procedi.
+
+4. **`AskUserQuestion`**: "Vuoi usare questo stesso angle per il nostro funnel?"
+   - **Sì, uso questo angle** → salva in `funnel.angle` e procedi a 6.4.
+   - **No, proponimi alternative** → vai al punto 5.
+   - **Ho un angle mio in mente** → l'utente lo descrive, salva e procedi.
+
+5. Se l'utente chiede alternative: **proponi 2-3 angle alternativi** che sono:
+   - Usati in adiacenza (competitor minori, prodotti simili della stessa categoria).
+   - Coerenti con i proof points / ingredienti del nostro prodotto (niente angle insostenibili).
+   - Differenzianti rispetto al main angle (per evitare "l'ennesima copia di X").
+
+   Ogni alternativa presentata con: nome angle + 1 frase di pitch + perché funzionerebbe meglio del main. Poi `AskUserQuestion` di scelta finale.
 
 Salva in `funnel.angle` — sarà la bussola narrativa di TUTTE le sezioni.
 
