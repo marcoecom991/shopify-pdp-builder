@@ -11,6 +11,7 @@ Sei una guida passo-passo per creare una PDP Shopify da zero. Segui le 7 fasi **
 
 - **🔒 Il template base e le sue sezioni NON si toccano MAI.** Il template base (es. `product.berberina-pills.json`) e le sue sezioni (es. `cboe-pdp-05.liquid`) appartengono a un prodotto live diverso. Ogni modifica a quei file rompe un prodotto esistente. **Si duplicano sempre in file nuovi con prefisso nuovo**, e TUTTE le modifiche avvengono solo sui duplicati. Mai `Edit` o `Write` sui file base.
 - **Non riscrivere il markup esistente.** Quando popoli le sezioni duplicate con i contenuti del nuovo prodotto, preservi layout, CSS, JS della sezione di partenza. Modifichi solo testi e URL immagini. Fonte di verità: `references/workflow-faithful-rebuild.md`.
+- **Ogni sezione duplicata deve finire editabile dal theme editor.** Durante la duplicazione (Fase 3), ogni file copiato viene ispezionato: se è già editabile (schema con `settings`/`blocks` che coprono testi e immagini) resta com'è; se è hardcoded (markup legacy, tipo GemPages detached) la skill lo **liquidifica automaticamente** — estrae testi/immagini/CTA nel markup del duplicato e li sposta nello schema come `settings`/`blocks` con `default`, sostituendo nel Liquid con `{{ section.settings.* }}`. Fonte: `references/section-schema-patterns.md`. **La liquidify tocca solo il duplicato, mai l'originale.**
 - **Un push per volta, sempre selettivo.** Mai `theme push` senza `--only`. Il `--only` include SOLO i file duplicati (nuovo prefisso). Fonte di verità: `references/selective-push.md`.
 - **Conferma con l'utente prima di ogni azione distruttiva o irreversibile** (creazione file, push live, rinomina).
 
@@ -159,7 +160,43 @@ Con `AskUserQuestion`: "Prefisso sezioni: `<default>`? (conferma o proponi alter
    ```
 7. Chiedi conferma prima del push.
 
-### 3.5 Push iniziale
+### 3.5 Detection + liquidify automatico (OBBLIGATORIO, prima del push)
+
+**Prima di pushare**, ogni file `sections/<nuovo-prefisso>-*.liquid` appena creato deve essere **editabile dal theme editor**. Fonte di verità: `references/section-schema-patterns.md`.
+
+Per ogni sezione duplicata:
+
+1. **Detection automatica** (nessuna domanda all'utente, comportamento deterministico):
+   - Leggi il file con `Read`.
+   - Estrai lo `{% schema %}` JSON.
+   - Considera la sezione **già editabile** se:
+     - Lo schema ha `settings` o `blocks` non vuoti, **E**
+     - I testi visibili nel markup (tra tag `<h*>`, `<p>`, `<li>`, `<span>`, `<a>`, `<button>`, attributi `alt=`) sono referenziati come `{{ section.settings.<id> }}` / `{{ block.settings.<id> }}` / `{% for block in section.blocks %}…`, **E**
+     - Le immagini sono referenziate via `{{ section.settings.<id> | image_url: … }}` o `{{ block.settings.<id> | image_url: … }}` (no `<img src="https://cdn.shopify.com/…">` hardcoded).
+   - Altrimenti → marca `needs_liquidify = true`.
+
+2. **Se `needs_liquidify = true`** → liquidifica la copia (mai il sorgente):
+   - Estrai dal markup i testi visibili, gli URL immagine (`<img src>`, `srcset`, `background-image: url(...)` inline), i link (`<a href>` di contenuto) e gli `alt`.
+   - Per ogni elemento estratto genera un `setting` con `id` semantico (snake_case: `hero_heading`, `hero_subheading`, `hero_image`, `cta_primary_url`, `cta_primary_label`, `benefit_1_title`, …) e `default` = valore estratto.
+   - Usa `richtext` per paragrafi con formattazione inline (`<strong>`, `<em>`, `<a>`), `image_picker` per immagini, `url` + `text` per coppie CTA, `blocks` per gruppi ripetuti di elementi fratelli con stessa classe (FAQ, card benefici, testimonianze).
+   - Sostituisci nel markup: testi → `{{ section.settings.<id> }}`, immagini → `{{ section.settings.<id> | image_url: width: <W> }}` (ricostruendo eventuale srcset via filter Shopify).
+   - **NON modificare** tag HTML, classi CSS, attributi `data-*`, `<script>`, `<style>`, JSON-LD, Liquid logic esistente. Tocca solo contenuto.
+   - **NON toccare MAI** il file sorgente `sections/<vecchio-prefisso>-*.liquid`.
+
+3. **Se già editabile** → lascia il file invariato.
+
+4. Mostra all'utente il riepilogo:
+   ```
+   Editabilità sezioni duplicate:
+     ✓ <nuovo-prefisso>-hero.liquid       → già editabile, invariato
+     ✓ <nuovo-prefisso>-benefits.liquid   → liquidified (14 settings, 1 blocks FAQ)
+     ✓ <nuovo-prefisso>-reviews.liquid    → liquidified (3 blocks review)
+   Template sorgente NON modificato.
+   ```
+
+Pattern e esempi before/after: `references/section-schema-patterns.md`.
+
+### 3.6 Push iniziale
 
 Push selettivo di TUTTI i file appena creati (template + sezioni):
 ```bash
@@ -175,7 +212,7 @@ npx @shopify/cli@latest theme push \
   # ... tutte le sezioni duplicate
 ```
 
-### 3.6 Istruzioni per il Product Shopify
+### 3.7 Istruzioni per il Product Shopify
 
 Mostra all'utente istruzioni per creare il Product in Shopify Admin:
 ```
@@ -258,7 +295,9 @@ Chiedi: "Materiali completi, procedo con la scrittura testi sezione-per-sezione?
 
 ## Fase 5 — Riscrittura testi per il nuovo prodotto
 
-**Contesto importante**: le sezioni duplicate contengono ATTUALMENTE i testi del prodotto base (es. sezioni copiate da `berberina-pills` parlano ancora di berberina). Il tuo compito in questa fase è **riscrivere i testi del nuovo prodotto** partendo dalla research raccolta in Fase 4, mantenendo IDENTICI markup/CSS/JS/struttura della sezione.
+**Contesto importante**: le sezioni duplicate sono a questo punto **tutte editabili** (Fase 3.5 ha liquidificato quelle legacy). I testi del prodotto base (es. berberina) vivono nei `default` dello schema di ogni sezione. Il tuo compito in questa fase è **riscrivere i testi del nuovo prodotto** partendo dalla research raccolta in Fase 4, **modificando i `default` nello schema** — NON il markup HTML. Markup/CSS/JS/struttura restano identici.
+
+**Regola operativa**: le sostituzioni di testo avvengono dentro il blocco `{% schema %}` (campi `default` di `settings` e `blocks`), non nel markup Liquid sopra. Markup e classi CSS non si toccano mai in questa fase.
 
 Nessun HTML da incollare in questa fase — tutti i contenuti del nuovo prodotto li hai già dal blocco di ricerca della Fase 4.
 
@@ -313,10 +352,11 @@ Per ogni sezione nel template nuovo, in ordine di apparizione nel JSON (top → 
    - Correggere singoli testi → applica le correzioni e riconferma.
    - Chiedere un tono diverso (più diretto, più emotivo, più tecnico) → rigenera.
 
-4. **Applica le sostituzioni** SOLO sul file duplicato `sections/<nuovo-prefisso>-<suffix>.liquid`:
-   - Per poche sostituzioni: `Edit` con `old_string` / `new_string` esatti, uno per testo.
-   - Per molte sostituzioni (es. sezione FAQ con 7 Q&A, o reviews wall con 10+ recensioni): `Bash` con `python3 <<'PY' ... PY` heredoc, usando il pattern `s, n = src.replace(old, new, 1); assert n == 1, "…"` per ogni replace. Vedi `references/workflow-faithful-rebuild.md`.
-   - **Non toccare**: markup HTML, classi CSS, blocchi `<script>`/`<style>` non-testuali, attributi `data-*`, URL immagine (verranno in Fase 6), `{% schema %}`, Liquid tags.
+4. **Applica le sostituzioni** SOLO sul file duplicato `sections/<nuovo-prefisso>-<suffix>.liquid`, **dentro il blocco `{% schema %}`** (campi `default` di `settings` e `blocks`):
+   - Per poche sostituzioni: `Edit` con `old_string` / `new_string` esatti sui `default` nello schema JSON.
+   - Per molte sostituzioni (es. FAQ con 7 Q&A → 7 blocks da aggiornare, reviews wall con 10+ blocks): `Bash` con `python3 <<'PY' ... PY` heredoc. Pattern: parsa lo schema come JSON, modifica i `default`, riscrivi il blocco schema nel file.
+   - **Non toccare**: markup HTML sopra lo schema, classi CSS, blocchi `<script>`/`<style>`, attributi `data-*`, URL immagine in `default` di `image_picker` (verranno sostituiti dall'utente dal theme editor in Fase 6), Liquid tags.
+   - Se durante la modifica noti che un testo è ancora hardcoded nel markup (cioè la liquidify di Fase 3.5 non l'ha coperto), segnala e proponi di completare la liquidify su quella sezione prima di continuare — non patchare nel markup.
 
 5. **Verifica no-regressioni sul template base**: prima del push, conferma a te stesso di non aver aperto/modificato per sbaglio file `sections/<vecchio-prefisso>-*.liquid` o `templates/product.<vecchio-nome>.json`. Se l'hai fatto, fermati e ripristina.
 
@@ -383,20 +423,24 @@ L'utente può cambiare modalità in corsa dicendo "passa a batch" o "torna a sez
 
 ## Fase 6 — Guida immagini
 
-Una volta che tutti i testi sono validati, passa alla fase immagini. Fonte: `references/image-specs-per-section.md`.
+Le sezioni sono editabili: le immagini sono `image_picker` nello schema. L'utente le carica **direttamente dal theme editor**, nessun replace di URL CDN nei file. Fonte: `references/image-specs-per-section.md` (specs) + `references/section-schema-patterns.md` (pattern editor).
 
 Per ogni sezione che contiene immagini:
-1. Identifica il numero e ruolo delle immagini richieste.
-2. Mostra all'utente il brief (vedi template a fine `image-specs-per-section.md`):
+1. Identifica il numero e ruolo delle immagini richieste (grep degli `image_picker` nello schema).
+2. Mostra all'utente il brief:
    - Ruolo dell'immagine (cosa deve mostrare).
-   - Ratio consigliato.
-   - Dimensioni target.
-   - Peso max.
-   - URL placeholder attuale da sostituire.
-3. L'utente prepara l'immagine offline, la carica su Shopify Admin → Settings → Files, copia l'URL CDN.
-4. L'utente incolla nella chat l'URL o gli URL (uno per immagine richiesta).
-5. Fai il replace nel file `.liquid` (Edit mirato o Python heredoc), poi push selettivo.
-6. Chiedi conferma visiva.
+   - Ratio consigliato + dimensioni target + peso max.
+   - Nome del campo `image_picker` nel theme editor (es. `Hero image`, `Benefit 2 icon`).
+3. Istruzioni utente:
+   ```
+   1. Apri il theme editor: Admin → Online Store → Themes → Customize (sul tema <store.theme_name>).
+   2. Vai alla PDP del nuovo prodotto (top-left picker → Products → <nome prodotto>).
+   3. Seleziona la sezione <nuovo-prefisso>-<suffix>.
+   4. Click sul campo "<label image_picker>" → Select image → Upload → scegli il file → Save.
+   ```
+4. L'utente conferma in chat che ha caricato.
+5. Nessun push necessario: le immagini sono salvate nei settings del template lato Shopify, non nei file Liquid del tema.
+6. Chiedi conferma visiva sull'URL live.
 
 ---
 
@@ -434,3 +478,4 @@ Per ogni sezione che contiene immagini:
 - `references/selective-push.md` — comando push standard + flag.
 - `references/section-naming.md` — convenzioni prefissi + aggiornamento schema.
 - `references/image-specs-per-section.md` — dimensioni/ratio per tipo sezione.
+- `references/section-schema-patterns.md` — regole di liquidify: schema editabile, pattern before/after, tipi di setting, edge case.

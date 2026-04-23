@@ -459,14 +459,34 @@ Per ogni `sections/<funnel.prefix><NN>-<ruolo>.liquid`:
    - Body: `font-family: <brand.body_font>`, `color: <brand.text>`.
 3. **Testi** dal research di Fase 6.4 + angle di Fase 6.3 + ispirazione competitor di Fase 5.2, con density/lunghezza coerente al ruolo (vedi `references/funnel-types.md`).
 4. **Bottoni CTA** puntano a `<funnel.cta_url>` con `<a class="<prefix>__cta" href="<funnel.cta_url>">`. Ripeti la CTA almeno 2 volte nel funnel (hero + closing minimo).
-5. **Placeholder immagini** espliciti (vedi `references/funnel-image-specs.md`): SVG data-uri con dimensioni + alt-text `IMG_PLACEHOLDER_<NN>_<ruolo>`. Non usare URL fittizi via/placeholder.com.
-6. **Schema Liquid minimo**:
+5. **Tutto editabile dal theme editor — regola fissa**. Ogni sezione funnel nasce editabile: testi, immagini, CTA sono `section.settings.*` / `block.settings.*` nello schema, mai hardcoded nel markup. Fonte: `references/section-schema-patterns.md`.
+   - **Testi**: `type: "text"` per singola riga, `type: "textarea"` per multiriga semplice, `type: "richtext"` per paragrafi con inline bold/italic/link (l'editor mostra WYSIWYG).
+   - **Immagini**: `type: "image_picker"`. Mai `<img src="https://cdn..."` hardcoded. Render via `{{ section.settings.<id> | image_url: width: <W> }}` per responsive automatico Shopify.
+   - **CTA**: coppia `type: "url"` + `type: "text"` per ciascun bottone. `href` iniziale default = `funnel.cta_url` (Fase 5.1).
+   - **Liste ripetibili** (FAQ, benefit cards, testimonial, reason cards listicle, domande quiz): usa `blocks` con `type` dedicato e `max_blocks` sensato. Iterazione via `{% for block in section.blocks %}` nel markup.
+   - **Default** sensati: ogni setting/block ha default popolato dal research/angle di Fase 6, così la pagina live mostra già contenuto reale subito dopo il push, senza passare dall'editor.
+   - **Placeholder immagini**: l'`image_picker` resta senza default (o con default placeholder SVG data-uri). Il markup gestisce lo stato "vuoto":
+     ```liquid
+     {% if section.settings.hero_image %}
+       <img src="{{ section.settings.hero_image | image_url: width: 1600 }}" alt="{{ section.settings.hero_image.alt }}" loading="lazy">
+     {% else %}
+       <img src="data:image/svg+xml,%3Csvg…%3E" alt="IMG_PLACEHOLDER_02_hero">
+     {% endif %}
+     ```
+6. **Schema Liquid completo** (esempio minimo, estendi con tutti i settings/blocks della sezione):
    ```liquid
    {% schema %}
    {
      "name": "<NOME LEGGIBILE SEZIONE>",
      "tag": "section",
      "class": "<prefix>-<NN>",
+     "settings": [
+       { "type": "text", "id": "heading", "label": "Titolo", "default": "…" },
+       { "type": "richtext", "id": "body", "label": "Testo", "default": "<p>…</p>" },
+       { "type": "image_picker", "id": "hero_image", "label": "Immagine hero" },
+       { "type": "url", "id": "cta_url", "label": "Link CTA", "default": "<funnel.cta_url>" },
+       { "type": "text", "id": "cta_label", "label": "Testo CTA", "default": "Scopri di più" }
+     ],
      "presets": [
        { "name": "<NOME LEGGIBILE SEZIONE>" }
      ]
@@ -531,11 +551,11 @@ Prima di ogni push: conferma a te stesso di non aver aperto/modificato per sbagl
 
 ## Fase 9 — Guida immagini
 
-Una volta che tutti i testi/layout sono validati, passa alle immagini. Fonte: `references/funnel-image-specs.md`.
+Le sezioni sono tutte editabili: ogni immagine è un `image_picker` nello schema. L'utente le carica **dal theme editor**, non via URL CDN incollato in chat. Fonte: `references/funnel-image-specs.md` (specs) + `references/section-schema-patterns.md` (pattern editor).
 
-Per ogni sezione che ha placeholder immagini (cerca `IMG_PLACEHOLDER_` nei file `<funnel.prefix>*.liquid`):
+Per ogni sezione con uno o più `image_picker`:
 
-1. Identifica il numero di immagini e il ruolo di ciascuna.
+1. Identifica dal markup/schema quante immagini servono e il ruolo di ciascuna (grep `image_picker` nello schema della sezione).
 2. Genera il brief:
    ```
    Sezione: <prefix>-<NN>-<ruolo>.liquid
@@ -546,21 +566,21 @@ Per ogni sezione che ha placeholder immagini (cerca `IMG_PLACEHOLDER_` nei file 
      - Ratio: <4:5>
      - Dimensioni: <1200×1500>
      - Peso max: 150 KB (.webp)
-     - Placeholder da sostituire: IMG_PLACEHOLDER_<NN>_<ruolo>
-   
-   Passi utente:
-     1. Prepara l'immagine.
-     2. Upload in Shopify Admin → Settings → Files.
-     3. Copia l'URL CDN.
-     4. Incollalo qui.
+     - Campo theme editor: "<label del image_picker>"
    ```
-3. L'utente incolla l'URL CDN (`https://cdn.shopify.com/s/files/1/...`).
-4. Fai replace nel file `.liquid` (Edit mirato sul placeholder specifico).
-5. Push selettivo della sezione.
-6. Chiedi conferma visiva.
-7. Prossima sezione.
+3. Istruzioni utente:
+   ```
+   1. Apri il theme editor: Admin → Online Store → Themes → Customize (tema <store.theme_name>).
+   2. Nel top-left picker seleziona Pages → <titolo pagina funnel>.
+   3. Nella sidebar sezioni click su <prefix>-<NN>-<ruolo>.
+   4. Per ogni campo immagine: click → Select image → Upload → salva.
+   5. Save del theme editor.
+   ```
+4. L'utente conferma in chat quando ha fatto.
+5. Nessun push necessario: le immagini si salvano lato Shopify come setting del template, non nel file `.liquid`.
+6. Chiedi conferma visiva sull'URL live della page.
 
-Modalità anche qui: A (per singola sezione), B (batch tutte le immagini insieme), C (solo su sezioni con immagini critiche). Usa la stessa `funnel.build_mode` di Fase 8 se l'utente non dice altro.
+Modalità di gestione: la stessa `funnel.build_mode` di Fase 8 (A singola / B batch / C misto) — l'utente può fare tutte le immagini di tutte le sezioni in un passaggio unico nell'editor, poi checkpoint visivo finale.
 
 ---
 
@@ -574,7 +594,7 @@ Checklist chiusura:
 - [ ] Desktop 1440px: layout si espande correttamente, max-width container coerente.
 - [ ] Palette + tipografia coerenti con `brand.*` (spot check visivo vs PDP di riferimento).
 - [ ] Tutte le CTA cliccate → portano a `<funnel.cta_url>` (PDP prodotto).
-- [ ] Nessuna immagine placeholder rimasta (grep `IMG_PLACEHOLDER_` deve ritornare 0 match nei file del funnel).
+- [ ] Tutti gli `image_picker` delle sezioni hanno un'immagine assegnata dal theme editor (no fallback placeholder SVG visibili).
 - [ ] DevTools console: no errori Liquid, no 404 su immagini.
 - [ ] Header/footer come da scelta (chromeless = assenti, theme = presenti).
 
@@ -605,3 +625,4 @@ Quando tutto ✓: dichiara il funnel pronto. Suggerisci:
 - `references/brand-identity-discovery.md` — come leggere colori/font da una PDP.
 - `references/page-template-layout.md` — schema page template, chromeless vs theme.
 - `references/funnel-image-specs.md` — dimensioni/ratio per ruolo sezione.
+- `references/section-schema-patterns.md` — pattern schema editabile: tipi di setting, blocks, richtext, image_picker, default sensati.

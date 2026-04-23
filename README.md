@@ -10,11 +10,11 @@ Crea una nuova PDP duplicando un template prodotto esistente.
 Flusso:
 1. **Store selection** — scegli su quale store lavorare (Nimea, Glowria, o altri configurati).
 2. **Auth + scelta tema** — verifica Theme Access token, mostra temi disponibili, permette di lavorare anche su tema dev/unpublished.
-3. **Duplicazione template** — sceglie un template PDP esistente, lo duplica con nuovo nome, duplica tutte le sezioni con prefisso derivato.
+3. **Duplicazione template + liquidify automatica** — sceglie un template PDP esistente, lo duplica con nuovo nome, duplica tutte le sezioni con prefisso derivato. **Ogni sezione duplicata viene resa editabile dal theme editor**: se era già editabile (schema completo) resta com'è; se era hardcoded (tipo GemPages legacy) la skill estrae testi/immagini/CTA dal markup del duplicato e li sposta nello schema come `settings`/`blocks`. Il template sorgente non viene mai toccato.
 4. **Push selettivo** — pubblica solo i file nuovi sul tema.
 5. **Raccolta materiali** — competitor PDP, transcript, research prodotto, angle, brand assets.
-6. **Riscrittura testi** — modalità sezione-per-sezione, batch, o misto. I testi del prodotto base vengono riscritti per il nuovo prodotto, mantenendo layout/CSS/JS identici.
-7. **Guida immagini** — brief per sezione con dimensioni/ratio corretti.
+6. **Riscrittura testi** — modalità sezione-per-sezione, batch, o misto. I testi del prodotto base vengono riscritti per il nuovo prodotto modificando i `default` dello schema (non il markup), mantenendo layout/CSS/JS identici.
+7. **Guida immagini** — brief per sezione con dimensioni/ratio corretti. Le immagini si caricano **direttamente dal theme editor** (campi `image_picker`), senza passare da URL CDN incollati in chat.
 8. **Verifica finale** — checklist mobile/desktop, URL live.
 
 ### `/create-new-funnel`
@@ -27,8 +27,8 @@ Flusso:
 4. **Creazione template** — nome, layout (chromeless senza header/footer, o `theme` con chrome), prefisso sezioni. Push del template scheletro.
 5. **Tipo di funnel** — advertorial / listicle / quiz / altro. Carica la struttura base di partenza.
 6. **Raccolta materiali** — esempi competitor del tipo scelto, research prodotto, **URL PDP** del prodotto (per le CTA), angolo marketing, brand assets extra.
-7. **Costruzione sezioni** — modalità sezione-per-sezione / batch / misto. Claude crea sezioni responsive mobile+desktop usando palette e font del brand, testo dal research, bottoni CTA → PDP.
-8. **Guida immagini** — brief per sezione con dimensioni/ratio.
+7. **Costruzione sezioni** — modalità sezione-per-sezione / batch / misto. Claude crea sezioni responsive mobile+desktop usando palette e font del brand, testo dal research, bottoni CTA → PDP. **Ogni sezione nasce editabile dal theme editor**: testi, immagini (`image_picker`) e link sono nello schema, mai hardcoded.
+8. **Guida immagini** — brief per sezione + upload diretto dal theme editor.
 
 ## Setup (primo utilizzo, una volta per membro)
 
@@ -155,16 +155,18 @@ shopify-pdp-builder/
 
 Reference files per skill:
 
-`skills/create-new-pdp/references/` (5 file):
+`skills/create-new-pdp/references/` (6 file):
 - `workflow-faithful-rebuild.md` — regola "non riscrivere markup, solo testi"
+- `section-schema-patterns.md` — liquidify + pattern schema editabile (tipi setting, blocks, edge case)
 - `auth-pattern.md`, `selective-push.md`, `section-naming.md` — infrastruttura condivisa
 - `image-specs-per-section.md` — specs immagini PDP
 
-`skills/create-new-funnel/references/` (7 file):
+`skills/create-new-funnel/references/` (8 file):
 - `funnel-types.md` — struttura advertorial/listicle/quiz
 - `brand-identity-discovery.md` — estrazione colori/font da una PDP esistente
 - `page-template-layout.md` — chromeless vs theme layout
 - `funnel-image-specs.md` — specs immagini per funnel
+- `section-schema-patterns.md` — pattern schema editabile (condiviso con PDP)
 - `auth-pattern.md`, `selective-push.md`, `section-naming.md` — copie infrastruttura
 
 ## Troubleshooting
