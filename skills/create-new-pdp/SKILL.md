@@ -333,9 +333,15 @@ Per ogni sezione nel template nuovo, in ordine di apparizione nel JSON (top → 
 
 8. Gestisci aggiustamenti (font-size, white-space, nowrap, spelling) come modifiche minime incrementali — mai rifare la sezione.
 
-9. Quando l'utente conferma, passa alla sezione successiva.
+9. Quando l'utente conferma, prima di passare alla sezione successiva **chiedi esplicitamente** con `AskUserQuestion`:
 
-Continua fino all'ultima sezione del template. A fine fase, tutti i testi del nuovo prodotto sono live, le immagini sono ancora quelle vecchie (placeholder del prodotto base): vengono sostituite in Fase 6.
+   "Sezione confermata. Come vuoi procedere con le restanti N sezioni?"
+   - **Continua sezione-per-sezione** → ripeti il ciclo dal punto 1 sulla prossima sezione.
+   - **Passa a batch (completa tutte le restanti insieme)** → switcha al sotto-flusso 5B (batch) per le sezioni ancora da fare. Il progresso sulle sezioni già confermate resta intatto.
+
+   Rispetta la scelta. Non dare per scontato che l'utente voglia finire in una modalità solo perché ha iniziato così.
+
+Continua (nella modalità corrente) fino all'ultima sezione del template. A fine fase, tutti i testi del nuovo prodotto sono live, le immagini sono ancora quelle vecchie (placeholder del prodotto base): vengono sostituite in Fase 6.
 
 ### 5B — Sotto-flusso batch
 

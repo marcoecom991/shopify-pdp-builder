@@ -497,7 +497,14 @@ Loop sulle sezioni in ordine 01→N:
    ```
 4. Chiedi all'utente di aprire `https://<store.shopify_domain>/pages/<funnel.page_slug>` e confermare mobile+desktop.
 5. Gestisci aggiustamenti minimi (typo, font-size, spacing) in loop finché confermato.
-6. Passa alla sezione successiva.
+6. **Prima di passare alla sezione successiva**, chiedi esplicitamente con `AskUserQuestion`:
+
+   "Sezione confermata. Come vuoi procedere con le restanti N sezioni?"
+   - **Continua sezione-per-sezione** → ripeti il ciclo dal punto 1 sulla prossima sezione.
+   - **Passa a batch (completa tutte le restanti insieme)** → switcha al workflow 8.4 (Opzione B batch) per le sezioni ancora da fare. Il progresso sulle sezioni già confermate resta intatto.
+   - **Passa a misto leggero** → switcha al workflow 8.5 (Opzione C) per le sezioni ancora da fare.
+
+   Rispetta la scelta. Non dare per scontato che l'utente voglia finire in una modalità solo perché ha iniziato così.
 
 ### 8.4 Workflow per Opzione B (batch)
 
